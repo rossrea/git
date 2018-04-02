@@ -1,4 +1,5 @@
 import tiles as Tiles
+import maps as Maps
 import random
 import sys
 import signal
@@ -36,39 +37,55 @@ import signal
 #Allow them to "Check their watch" or "Search" almost anywhere?
 
 def signal_handler(signal, frame):
-    print("ctrl-c pressed ... exitting.")
+    print("Ctrl-c pressed ... exiting.")
     sys.exit(0)
 
 def GenerateMap(Len,Width,MandatoryTiles,FluffTiles,AvailableItems):
-    Map=[]
+    MyMap=[]
     MyTile=Tiles.Tile
+    for MyTile in FluffTiles:
+        if MyTile.GetItem()!="":
+            Print("Programming error, please remove '{}' from fluff tile '{}'".format(MyTile.GetItem(),MyTile.GetDescription()))
+            sys.exit(1)
+    
     for x in range(Len):
         MapRow=[]
         for y in range(Width):
             i=random.randint(0,len(FluffTiles)-1)
             MapRow.append(FluffTiles[i])
-        Map.append(MapRow)
+        MyMap.append(MapRow)
 
     for i in range(len(MandatoryTiles)):
         x=random.randint(0,Len-1)
         y=random.randint(0,Width-1)
         while True:
-            if Map[x][y] in FluffTiles:
-                MyTile=MandatoryTiles[i]
-                print("Replacing fluff tile with".format(MyTile.GetDescription()))
+            if MyMap[x][y] in FluffTiles:
+                #print("Placing mandatory tile '{}' at ({},{})".format(MandatoryTiles[i].GetDescription(),x,y))
+                MyMap[x][y]=MandatoryTiles[i]
                 break
             else:
                 x=random.randint(0,Len-1)
                 y=random.randint(0,Width-1)
-                
 
-    for x in range(Len):
-        for y in range(Width):
-            MyTile=Map[x][y]
-            print("Tile at {},{} (X,Y) is:".format(x,y))
-            MyTile.DisplayTile()
+    for i in range(len(AvailableItems)):
+        x=random.randint(0,Len-1)
+        y=random.randint(0,Width-1)
+        while True:
+            if MyMap[x][y].GetItem()=="":
+                #print("Placing item '{}' at ({},{})".format(AvailableItems[i],x,y))
+                MyMap[x][y].SetItem(AvailableItems[i])
+                break
+            else:
+                x=random.randint(0,Len-1)
+                y=random.randint(0,Width-1)
 
-    return Map
+#    for x in range(Len):
+#        for y in range(Width):
+#            MyTile=Map[x][y]
+#            print("Tile at {},{} (X,Y) is:".format(x,y))
+#            MyTile.DisplayTile()
+
+    return MyMap
     
 def BayScenario():
     print("**** Bay code goes here.")
@@ -79,7 +96,6 @@ def GulfScenario():
     return True
 
 def RiverScenario():
-
     print("**** River code goes here.")
 
     global TimeSpent
@@ -87,8 +103,8 @@ def RiverScenario():
     DynamiteCounter=0
     DisplayEvent=False
     EventText=""
-
-    CurrentTile=Map[0][0]
+    
+    CurrentTile=RiverMap[0][0]  #Implement starting tile
     print("\nYou decide to take a trip down the river.  A storm is on the horizon, but is 'supposed' to clear soon.\n")
     print("blah,blah ... (storyline) ...\n\n")
 
@@ -188,6 +204,21 @@ def CheckWatch():
 def DisplayLeaderBoard():
     print("**** Leader Board Code")
 
+def John():
+    global RiverMap
+    MyMap=Maps.Map(RiverMap,5,5,"The river bank is too steep to exit here!")
+    MyTile=MyMap.GetCurrentTile()
+    while True:
+        print MyMap.DisplayMap()
+        print MyTile.DisplayTile()
+        UserSelection=raw_input("What would you like to do next? ").upper()
+        if UserSelection=="X":
+            return
+        MyTile=MyMap.Move(UserSelection)
+
+
+
+
 
 #Start Real Program
 #Tempcode Start
@@ -207,9 +238,9 @@ RiverTiles.append(Tiles.Tile("water with a shiny surface",1,"Net","fishing net")
 RiverTiles.append(Tiles.Tile("river Tile 4",1,"","old lure"))
 RiverTiles.append(Tiles.Tile("river Tile 5",1,"","torn shirt")) 
 RiverFluffTiles.append(Tiles.Tile("clear, open water",0,"",""))
-RiverFluffTiles.append(Tiles.Tile("blue water",0,"","flotsam"))
+RiverFluffTiles.append(Tiles.Tile("blue water",0,"",""))
 RiverFluffTiles.append(Tiles.Tile("beautiful, blue water",0,"",""))
-RiverFluffTiles.append(Tiles.Tile("slightly, murky water",0,"","a broken board"))
+RiverFluffTiles.append(Tiles.Tile("slightly, murky water",0,"",""))
 
     
 TimeSpent=0             #Time (or turns?) spent in the game.  Use in the leader board results
@@ -225,9 +256,7 @@ BayFluffTiles=[]
 GulfFluffTiles=[]
 Inventory=[]
 #Available items format: item, boolean to indicate if it has been placed in a scenario.
-AvailableItems=[["Gold Coin",False],
-                ["Fishing Hook",False],
-                ["Wrench",False]]
+AvailableItems=["Gold Coin","Fishing Hook","Wrench"]
 
 
 RiverMap=GenerateMap(5,5,RiverTiles,RiverFluffTiles,AvailableItems)
@@ -247,6 +276,8 @@ while(StillPlaying):
     UserSelection=raw_input("What would you like to do next? ").upper()
     if UserSelection == "B":
         StillPlaying=BayScenario()
+    elif UserSelection == "J":
+        John()
     elif UserSelection == "G":
         StillPlaying=GulfScenario()
     elif UserSelection == "R":
